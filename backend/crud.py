@@ -1,5 +1,7 @@
-from sqlmodel import Session
+from sqlmodel import Session,select, Sequence
 from models import Task, engine
+
+
 
 def create_task(title:str) -> Task:
   with Session(engine) as session:
@@ -29,3 +31,7 @@ def delete_task(task_id:int) -> bool :
     session.delete(task)
     session.commit()
     return True
+
+def list_tasks()->list[Task]:
+  with Session(engine) as session:
+    return list(session.exec(select(Task)).all())

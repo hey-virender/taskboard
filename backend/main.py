@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from connection_manager import manager
-from crud import create_task,move_task,delete_task
+from crud import create_task,move_task,delete_task, list_tasks
 from models import init_db
+from models import Task
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -13,6 +14,10 @@ async def lifespan(app:FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+@app.get("/tasks")
+def get_tasks()->list[Task]:
+   return list_tasks()
 
 
 @app.websocket("/ws")
