@@ -13,7 +13,15 @@ export default function App() {
     ws.onopen=()=>console.log("connected")
     ws.onmessage=(event)=>{
       const data = JSON.parse(event.data)
-      console.log(data)
+      if(data.action == "task_created"){
+        setTasks(prev=>[...prev,data.task])
+      }
+      else if(data.action =="task_moved"){
+        setTasks(prev=> prev.map(task=> task.id === data.task.id ? data.task : task))
+      }
+      else if(data.action == "task_deleted"){
+        setTasks(prev=>prev.filter(task=>task.id !== data.task.id))
+      }
     }
     return ()=>{
       ws.close()
