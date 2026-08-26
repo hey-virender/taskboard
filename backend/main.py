@@ -4,6 +4,7 @@ from connection_manager import manager
 from crud import create_task,move_task,delete_task, list_tasks
 from models import init_db
 from models import Task
+from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -14,6 +15,13 @@ async def lifespan(app:FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+   CORSMiddleware,
+   allow_origins=["http://localhost:5173"],
+   allow_methods=["*"],
+   allow_headers=["*"],
+)
 
 @app.get("/tasks")
 def get_tasks()->list[Task]:
