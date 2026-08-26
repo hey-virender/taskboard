@@ -134,64 +134,89 @@ export default function App() {
     }
   }
 
+  const columnConfig = [
+    {
+      id: "todo",
+      title: "Todo",
+      tasks: todoTasks,
+      accent: "bg-blue-500",
+      header: "border-blue-100 bg-blue-50/60",
+    },
+    {
+      id: "in_progress",
+      title: "In Progress",
+      tasks: inProgressTasks,
+      accent: "bg-yellow-500",
+      header: "border-yellow-100 bg-yellow-50/60",
+    },
+    {
+      id: "done",
+      title: "Done",
+      tasks: doneTasks,
+      accent: "bg-green-500",
+      header: "border-green-100 bg-green-50/60",
+    },
+  ];
+
   return (
-    <main>
-      <header className="flex justify-between px-4 items-center">
-        <h1 className="text-xl text-blue-500">Taskboard</h1>
+    <main className="min-h-screen bg-slate-50">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur sm:px-6">
+        <h1 className="text-lg font-bold tracking-tight text-blue-500 sm:text-xl">
+          Taskboard
+        </h1>
         <button
-          className={`${isTaskFormOpen ? "bg-red-500" : "bg-blue-500"} text-white px-4 py-2 rounded-lg`}
+          className={`${isTaskFormOpen ? "bg-red-500 hover:bg-red-600" : "bg-blue-500 hover:bg-blue-600"} shrink-0 rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors sm:px-4`}
           onClick={() => setIsTaskFormOpen(!isTaskFormOpen)}
         >
           {isTaskFormOpen ? "Close" : "Create Task"}
         </button>
       </header>
-      {isTaskFormOpen ? (
-        <TaskForm onSend={handleCreateTask} />
-      ) : (
-        <DragDropProvider onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
-          <section className="grid grid-cols-3 gap-3 p-3">
-            <div className="flex flex-col gap-3 border-blue-500 border-1 p-3 rounded-lg">
-              <h3>Todo</h3>
-              <Droppable id="todo">
-                {todoTasks.map((task, index) => (
-                  <TaskComponent
-                    onDelete={handleDeleteTask}
-                    key={task.id}
-                    task={task}
-                    index={index}
-                  />
-                ))}
-              </Droppable>
-            </div>
-            <div className="flex flex-col gap-3 border-yellow-500 border-1 p-3 rounded-lg">
-              <h3>In Progress</h3>
-              <Droppable id="in_progress">
-                {inProgressTasks.map((task, index) => (
-                  <TaskComponent
-                    onDelete={handleDeleteTask}
-                    key={task.id}
-                    task={task}
-                    index={index}
-                  />
-                ))}
-              </Droppable>
-            </div>
-            <div className="flex flex-col gap-3 border-green-500 border-1 p-3 rounded-lg">
-              <h3>Done</h3>
-              <Droppable id="done">
-                {doneTasks.map((task, index) => (
-                  <TaskComponent
-                    onDelete={handleDeleteTask}
-                    key={task.id}
-                    task={task}
-                    index={index}
-                  />
-                ))}
-              </Droppable>
-            </div>
-          </section>
-        </DragDropProvider>
-      )}
+      <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
+        {isTaskFormOpen ? (
+          <TaskForm onSend={handleCreateTask} />
+        ) : (
+          <DragDropProvider onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {columnConfig.map((column) => (
+                <div
+                  key={column.id}
+                  className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4"
+                >
+                  <div
+                    className={`flex items-center justify-between rounded-lg border px-3 py-2 ${column.header}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`size-2.5 rounded-full ${column.accent}`} />
+                      <h3 className="text-sm font-semibold text-slate-700">
+                        {column.title}
+                      </h3>
+                    </div>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-slate-500 shadow-sm">
+                      {column.tasks.length}
+                    </span>
+                  </div>
+                  <Droppable id={column.id}>
+                    {column.tasks.length === 0 ? (
+                      <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-slate-200 py-8 text-sm text-slate-400">
+                        No tasks yet
+                      </div>
+                    ) : (
+                      column.tasks.map((task, index) => (
+                        <TaskComponent
+                          onDelete={handleDeleteTask}
+                          key={task.id}
+                          task={task}
+                          index={index}
+                        />
+                      ))
+                    )}
+                  </Droppable>
+                </div>
+              ))}
+            </section>
+          </DragDropProvider>
+        )}
+      </div>
     </main>
   );
 }
