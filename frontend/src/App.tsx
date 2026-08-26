@@ -71,17 +71,26 @@ export default function App() {
 
   function handleDragEnd(event: any) {
     if (event.canceled) return;
-    const taskId = event.operation.source?.id;
-    const newStatus = event.operation.target?.id;
-    if (taskId == null || newStatus == null) return;
+    const { operation } = event;
+    const taskId = operation.source?.id;
+    if (taskId == null) return;
+    const newStatus = operation.target?.group ?? operation.target?.id;
+    const newPosition = operation.target?.index ?? 0;
+    if (newStatus == null) return;
 
     setTasks((prev) =>
       prev.map((task) =>
-        task.id === taskId ? { ...task, status: newStatus } : task,
+        task.id === taskId
+          ? { ...task, status: newStatus, position: newPosition }
+          : task,
       ),
     );
 
-    handleMoveTask({ task_id: taskId, new_status: newStatus, new_position: 0 });
+    handleMoveTask({
+      task_id: taskId,
+      new_status: newStatus,
+      new_position: newPosition,
+    });
   }
 
   return (
