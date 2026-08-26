@@ -46,6 +46,9 @@ export default function App() {
     setIsTaskFormOpen(false)
   }
 
+  function handleDeleteTask({task_id}:{task_id:number}){
+    wsRef.current?.send(JSON.stringify({action:"delete_task",task_id}))
+  }
   
   return (
     <main>
@@ -55,13 +58,13 @@ export default function App() {
       </header>
       {isTaskFormOpen ? <TaskForm onSend={handleCreateTask}/> : <section>
         <div className="flex flex-col gap-3">
-          {todoTasks.map((task)=>(<TaskComponent key={task.id} task={task}/>))}
+          {todoTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
         </div>
          <div className="flex flex-col gap-3">
-          {inProgressTasks.map((task)=>(<TaskComponent key={task.id} task={task}/>))}
+          {inProgressTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
         </div>
          <div className="flex flex-col gap-3">
-          {doneTasks.map((task)=>(<TaskComponent key={task.id} task={task}/>))}
+          {doneTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
         </div>
       </section>}
       
