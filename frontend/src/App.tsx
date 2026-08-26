@@ -4,9 +4,15 @@ import TaskComponent from "./components/TaskComponent";
 import TaskForm from "./components/TaskForm";
 import Droppable from "./components/Dropable";
 import { DragDropProvider } from "@dnd-kit/react";
+import { move } from "@dnd-kit/helpers";
 
 export default function App() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Record<number, Task>>({});
+  const [columns, setColumns] = useState<Record<string, number[]>>({
+    todo: [],
+    in_progress: [],
+    done: [],
+  });
   const [isTaskFormOpen, setIsTaskFormOpen] = useState<boolean>(false);
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -17,13 +23,33 @@ export default function App() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.action == "task_created") {
-        setTasks((prev) => [...prev, data.task]);
+        setTasks((prev) => ({ ...prev, [data.task.id]: data.task }));
+        setColumns((prev) => ({
+          ...prev,
+          [data.task.status]: [...prev[data.task.status], data.task.id],
+        }));
       } else if (data.action == "task_moved") {
-        setTasks((prev) =>
-          prev.map((task) => (task.id === data.task.id ? data.task : task)),
-        );
+        setTasks((prev) => ({ ...prev, [data.task.id]: data.task }));
+        setColumns((prev) => {
+          const withoutTask: Record<string, number[]> = {
+            todo: prev.todo.filter((id) => id !== data.task.id),
+            in_progress: prev.in_progress.filter((id) => id !== data.task.id),
+            done: prev.done.filter((id) => id !== data.task.id),
+          };
+          const targetColumn = [...withoutTask[data.task.status]];
+          targetColumn.splice(data.task.position, 0, data.task.id);
+          return { ...withoutTask, [data.task.status]: targetColumn };
+        });
       } else if (data.action == "task_deleted") {
-        setTasks((prev) => prev.filter((task) => task.id !== data.task_id));
+        setTasks((prev) => {
+          const { [data.task_id]: removed, ...rest } = prev;
+          return rest;
+        });
+        setColumns((prev) => ({
+          todo: prev.todo.filter((id) => id !== data.task_id),
+          in_progress: prev.in_progress.filter((id) => id !== data.task_id),
+          done: prev.done.filter((id) => id !== data.task_id),
+        }));
       }
     };
     return () => {
@@ -34,12 +60,29 @@ export default function App() {
   useEffect(() => {
     fetch(`${import.meta.env.VITE_BASE_URL}/tasks`)
       .then((res) => res.json())
-      .then((data) => setTasks(data));
+      .then((data: Task[]) => {
+        const taskMap = data.reduce(
+          (acc, task) => {
+            return { ...acc, [task.id]: task };
+          },
+          {} as Record<number, Task>,
+        );
+
+        const columnMap = data.reduce(
+          (acc, task) => {
+            const existing = acc[task.status] ?? [];
+            return { ...acc, [task.status]: [...existing, task.id] };
+          },
+          { todo: [], in_progress: [], done: [] } as Record<string, number[]>,
+        );
+        setTasks(taskMap);
+        setColumns(columnMap);
+      });
   }, []);
 
-  const todoTasks = tasks.filter((t) => t.status === "todo");
-  const inProgressTasks = tasks.filter((t) => t.status === "in_progress");
-  const doneTasks = tasks.filter((t) => t.status === "done");
+  const todoTasks = columns.todo.map((id) => tasks[id]);
+  const inProgressTasks = columns.in_progress.map((id) => tasks[id]);
+  const doneTasks = columns.done.map((id) => tasks[id]);
 
   function handleCreateTask({ title }: { title: string }) {
     wsRef.current?.send(JSON.stringify({ action: "create_task", title }));
@@ -69,28 +112,26 @@ export default function App() {
     );
   }
 
+  function handleDragOver(event: any) {
+    setColumns((cols) => move(cols, event));
+  }
+
   function handleDragEnd(event: any) {
     if (event.canceled) return;
-    const { operation } = event;
-    const taskId = operation.source?.id;
+    const taskId = event.operation.source?.id;
     if (taskId == null) return;
-    const newStatus = operation.target?.group ?? operation.target?.id;
-    const newPosition = operation.target?.index ?? 0;
-    if (newStatus == null) return;
 
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId
-          ? { ...task, status: newStatus, position: newPosition }
-          : task,
-      ),
-    );
-
-    handleMoveTask({
-      task_id: taskId,
-      new_status: newStatus,
-      new_position: newPosition,
-    });
+    for (const [status, ids] of Object.entries(columns)) {
+      const idx = ids.indexOf(taskId);
+      if (idx != -1) {
+        handleMoveTask({
+          task_id: taskId,
+          new_status: status,
+          new_position: idx,
+        });
+        break;
+      }
+    }
   }
 
   return (
@@ -107,16 +148,17 @@ export default function App() {
       {isTaskFormOpen ? (
         <TaskForm onSend={handleCreateTask} />
       ) : (
-        <DragDropProvider onDragEnd={handleDragEnd}>
+        <DragDropProvider onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
           <section className="grid grid-cols-3 gap-3 p-3">
             <div className="flex flex-col gap-3 border-blue-500 border-1 p-3 rounded-lg">
               <h3>Todo</h3>
               <Droppable id="todo">
-                {todoTasks.map((task) => (
+                {todoTasks.map((task, index) => (
                   <TaskComponent
                     onDelete={handleDeleteTask}
                     key={task.id}
                     task={task}
+                    index={index}
                   />
                 ))}
               </Droppable>
@@ -124,11 +166,12 @@ export default function App() {
             <div className="flex flex-col gap-3 border-yellow-500 border-1 p-3 rounded-lg">
               <h3>In Progress</h3>
               <Droppable id="in_progress">
-                {inProgressTasks.map((task) => (
+                {inProgressTasks.map((task, index) => (
                   <TaskComponent
                     onDelete={handleDeleteTask}
                     key={task.id}
                     task={task}
+                    index={index}
                   />
                 ))}
               </Droppable>
@@ -136,11 +179,12 @@ export default function App() {
             <div className="flex flex-col gap-3 border-green-500 border-1 p-3 rounded-lg">
               <h3>Done</h3>
               <Droppable id="done">
-                {doneTasks.map((task) => (
+                {doneTasks.map((task, index) => (
                   <TaskComponent
                     onDelete={handleDeleteTask}
                     key={task.id}
                     task={task}
+                    index={index}
                   />
                 ))}
               </Droppable>

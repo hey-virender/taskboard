@@ -1,18 +1,19 @@
 import { MdDelete } from "react-icons/md";
 import type { Task } from "../types";
-import { useDraggable } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 
 const TaskComponent = ({
   task,
   onDelete,
+  index,
 }: {
   task: Task;
+  index: number;
   onDelete: ({ task_id }: { task_id: number }) => void;
 }) => {
   const { ref, isDragging } = useSortable({
     id: task.id,
-    index: task.position,
+    index,
     group: task.status,
   });
 
