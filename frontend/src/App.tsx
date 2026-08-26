@@ -49,6 +49,10 @@ export default function App() {
   function handleDeleteTask({task_id}:{task_id:number}){
     wsRef.current?.send(JSON.stringify({action:"delete_task",task_id}))
   }
+
+  function handleMoveTask({task_id, new_status, new_position}:{task_id:number, new_status:string, new_position:number}){
+    wsRef.current?.send(JSON.stringify({action:"move_task",task_id, new_status,new_position}))
+  }
   
   return (
     <main>
@@ -56,14 +60,17 @@ export default function App() {
         <h1 className="text-xl text-blue-500">Taskboard</h1>
         <button className={`${isTaskFormOpen ? "bg-red-500":"bg-blue-500"} text-white px-4 py-2 rounded-lg`} onClick={()=>setIsTaskFormOpen(!isTaskFormOpen)}>{isTaskFormOpen ? "Close" : "Create Task"}</button>
       </header>
-      {isTaskFormOpen ? <TaskForm onSend={handleCreateTask}/> : <section>
-        <div className="flex flex-col gap-3">
+      {isTaskFormOpen ? <TaskForm onSend={handleCreateTask}/> : <section className="grid grid-cols-3 gap-3 p-3">
+        <div className="flex flex-col gap-3 border-blue-500 border-1 p-3 rounded-lg">
+          <h3>Todo</h3>
           {todoTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
         </div>
-         <div className="flex flex-col gap-3">
+         <div className="flex flex-col gap-3 border-yellow-500 border-1 p-3 rounded-lg">
+          <h3>In Progress</h3>
           {inProgressTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
         </div>
-         <div className="flex flex-col gap-3">
+         <div className="flex flex-col gap-3 border-green-500 border-1 p-3 rounded-lg">
+          <h3>Done</h3>
           {doneTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
         </div>
       </section>}
