@@ -2,11 +2,14 @@ import { useEffect,useRef, useState } from "react"
 import type { Task } from "./types"
 import TaskComponent from "./components/TaskComponent"
 import TaskForm from "./components/TaskForm"
+import Droppable from "./components/Dropable"
+import { DragDropProvider } from "@dnd-kit/react"
 
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isTaskFormOpen,setIsTaskFormOpen] = useState<boolean>(false)
 
+ 
 
 
   const wsRef = useRef<WebSocket | null>(null)
@@ -53,6 +56,14 @@ export default function App() {
   function handleMoveTask({task_id, new_status, new_position}:{task_id:number, new_status:string, new_position:number}){
     wsRef.current?.send(JSON.stringify({action:"move_task",task_id, new_status,new_position}))
   }
+
+  function handleDragEnd(event:any){
+    if(event.canceled) return
+    const taskId = event.operation.source?.id
+    const newStatus = event.operation.target?.id
+    if(taskId == null || newStatus == null) return
+    handleMoveTask({task_id:taskId,new_status:newStatus,new_position:0})
+  }
   
   return (
     <main>
@@ -60,20 +71,26 @@ export default function App() {
         <h1 className="text-xl text-blue-500">Taskboard</h1>
         <button className={`${isTaskFormOpen ? "bg-red-500":"bg-blue-500"} text-white px-4 py-2 rounded-lg`} onClick={()=>setIsTaskFormOpen(!isTaskFormOpen)}>{isTaskFormOpen ? "Close" : "Create Task"}</button>
       </header>
-      {isTaskFormOpen ? <TaskForm onSend={handleCreateTask}/> : <section className="grid grid-cols-3 gap-3 p-3">
+      {isTaskFormOpen ? <TaskForm onSend={handleCreateTask}/> :<DragDropProvider onDragEnd={handleDragEnd}><section className="grid grid-cols-3 gap-3 p-3">
         <div className="flex flex-col gap-3 border-blue-500 border-1 p-3 rounded-lg">
           <h3>Todo</h3>
-          {todoTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
+          <Droppable id="todo">
+            {todoTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
+          </Droppable>
         </div>
          <div className="flex flex-col gap-3 border-yellow-500 border-1 p-3 rounded-lg">
           <h3>In Progress</h3>
-          {inProgressTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
+          <Droppable id="in_progress">
+            {inProgressTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
+          </Droppable>
         </div>
          <div className="flex flex-col gap-3 border-green-500 border-1 p-3 rounded-lg">
           <h3>Done</h3>
-          {doneTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
+          <Droppable id="done">
+            {doneTasks.map((task)=>(<TaskComponent onDelete={handleDeleteTask} key={task.id} task={task}/>))}
+          </Droppable>
         </div>
-      </section>}
+      </section></DragDropProvider> }
       
 
 
