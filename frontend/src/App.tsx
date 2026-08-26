@@ -1,6 +1,11 @@
-import { useEffect,useRef } from "react"
+import { useEffect,useRef, useState } from "react"
+import type { Task } from "./types"
 
 export default function App() {
+  const [tasks, setTasks] = useState<Task[]>([])
+
+
+
   const wsRef = useRef<WebSocket | null>(null)
   useEffect(()=>{
     const ws = new WebSocket("ws://127.0.0.1:8000/ws")
@@ -13,6 +18,12 @@ export default function App() {
     return ()=>{
       ws.close()
     }
+  },[])
+
+  useEffect(()=>{
+    fetch(`${import.meta.env.VITE_BASE_URL}/tasks`)
+    .then(res=>res.json())
+    .then(data=>setTasks(data))
   },[])
 
   
