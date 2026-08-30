@@ -17,7 +17,7 @@ export default function App() {
 
   const wsRef = useRef<WebSocket | null>(null);
   useEffect(() => {
-    const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+    const ws = new WebSocket(import.meta.env.VITE_WS_URL);
     wsRef.current = ws;
     ws.onopen = () => console.log("connected");
     ws.onmessage = (event) => {
@@ -175,7 +175,10 @@ export default function App() {
         {isTaskFormOpen ? (
           <TaskForm onSend={handleCreateTask} />
         ) : (
-          <DragDropProvider onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
+          <DragDropProvider
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+          >
             <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {columnConfig.map((column) => (
                 <div
@@ -186,7 +189,9 @@ export default function App() {
                     className={`flex items-center justify-between rounded-lg border px-3 py-2 ${column.header}`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className={`size-2.5 rounded-full ${column.accent}`} />
+                      <span
+                        className={`size-2.5 rounded-full ${column.accent}`}
+                      />
                       <h3 className="text-sm font-semibold text-slate-700">
                         {column.title}
                       </h3>
