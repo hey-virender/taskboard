@@ -2,6 +2,8 @@
 
 A real-time Kanban-style task board. Tasks are organized into **Todo**, **In Progress**, and **Done** columns, support drag-and-drop reordering across columns, and stay in sync across all connected clients over a WebSocket connection.
 
+"Live demo: https://taskboard-mu-ten.vercel.app/"
+
 ## Tech Stack
 
 **Backend**
